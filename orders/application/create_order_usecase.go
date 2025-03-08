@@ -9,29 +9,36 @@ import (
 )
 
 type CreateOrderUseCase struct {
-    repo   ports.OrderRepository
-    broker ports.Broker
+	repo               ports.OrderRepository
+	broker             ports.Broker
+	senderNotification ports.SenderNotification
 }
 
-func NewCreateOrderUseCase(repo ports.OrderRepository, broker ports.Broker) *CreateOrderUseCase {
-    return &CreateOrderUseCase{repo: repo, broker: broker}
+func NewCreateOrderUseCase(repo ports.OrderRepository, broker ports.Broker, senderNotification ports.SenderNotification) *CreateOrderUseCase {
+	return &CreateOrderUseCase{repo: repo, broker: broker, senderNotification: senderNotification}
 }
 
 func (uc *CreateOrderUseCase) Execute(order domain.Order) (int, error) {
-    // Crear la orden
-    idOrder, err := uc.repo.CreateOrder(order)
-    if err != nil {
-        return 0, err
-    }
+	
+	idOrder, err := uc.repo.CreateOrder(order)
+	if err != nil {
+		return 0, err
+	}
 
-    // Convertir el ID de la orden a string
-    idOrderStr := strconv.Itoa(idOrder)
+	idOrderStr := strconv.Itoa(idOrder)
 
-    // Publicar el ID de la orden en el broker
-    err = uc.broker.Publish(idOrderStr)
-    if err != nil {
-        return idOrder, err
-    }
+	err = uc.broker.Publish(idOrderStr)
+	if err != nil {
+		return idOrder, err
+	}
 
-    return idOrder, nil
+	err = uc.senderNotification.SendNotification(map[string]interface{}{
+		"event": "new-order",
+		"data":  idOrderStr,
+	})
+	if err != nil {
+		return idOrder, err
+	}
+
+	return idOrder, nil
 }
