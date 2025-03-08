@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	o_application "ModaVane/orders/application"
+	core "ModaVane/orders/core"
 	o_adapters "ModaVane/orders/infraestructure/adapters"
 	o_controllers "ModaVane/orders/infraestructure/http/controllers"
 	o_routes "ModaVane/orders/infraestructure/http/routes"
 
-	core "ModaVane/orders/core"
 )
 
 func CORS() gin.HandlerFunc {
@@ -38,19 +38,46 @@ func main() {
 
 	myGin.Use(CORS())
 
+	// Inicializar base de datos
 	db, err := core.InitDB()
 	if err != nil {
-		log.Println(err)
+		log.Println("Error al conectar a la base de datos:", err)
 		return
 	}
+
+	// Inicializar el broker RabbitMQ
+	rabbitBroker := o_adapters.NewRabbitMQBroker("ec2-3-83-91-51.compute-1.amazonaws.com", 5672, "ale", "ale123")
+
+	// Conectar al broker
+	err = rabbitBroker.Connect()
+	if err != nil {
+		log.Println("Error al conectar a RabbitMQ:", err)
+		return
+	}
+
+	// Inicializar el canal de RabbitMQ
+	err = rabbitBroker.InitChannel("cola1")
+	if err != nil {
+		log.Println("Error al inicializar el canal de RabbitMQ:", err)
+		return
+	}
+
+	// Inicializar el repositorio
 	orderRepository := o_adapters.NewMySQLOrderRepository(db)
-	createOrderUseCase := o_application.NewCreateOrderUseCase(orderRepository)
+
+	// Inyección de dependencias en los casos de uso
+	createOrderUseCase := o_application.NewCreateOrderUseCase(orderRepository, rabbitBroker)
 	getOrderUseCase := o_application.NewGetOrderUseCase(orderRepository)
-	
 	updateOrderUseCase := o_application.NewUpdateOrderUseCase(orderRepository)
 	deleteOrderUseCase := o_application.NewDeleteOrderUseCase(orderRepository)
 
-	createOrderController := o_controllers.NewOrderController(createOrderUseCase , getOrderUseCase, updateOrderUseCase, deleteOrderUseCase)
+	// Crear controlador con los casos de uso inyectados
+	createOrderController := o_controllers.NewOrderController(createOrderUseCase, getOrderUseCase, updateOrderUseCase, deleteOrderUseCase)
 
-	myGin.Run(":8080")
+	o_routes.SetupOrderRoutes(myGin, createOrderController)
+
+	log.Println("Servidor iniciado en :8080")
+	if err := myGin.Run(":8080"); err != nil {
+		log.Fatalf("Error al iniciar el servidor: %v", err)
+	}
 }
