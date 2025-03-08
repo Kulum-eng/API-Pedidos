@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"ModaVane/orders/domain"
+
 )
 
 type MySQLOrderRepository struct {
@@ -17,8 +18,8 @@ func NewMySQLOrderRepository(db *sql.DB) *MySQLOrderRepository {
 
 func (repo *MySQLOrderRepository) CreateOrder(order domain.Order) (int, error) {
 	res, err := repo.DB.Exec(
-		"INSERT INTO orders (user_id, products, total_price, status) VALUES (?, ?, ?, ?)",
-		order.UserID, order.Products, order.TotalPrice, order.Status,
+		"INSERT INTO orders (user_id, product_id, total_price, status) VALUES (?, ?, ?, ?)",
+		order.UserID, order.Product_id, order.TotalPrice, order.Status,
 	)
 	if err != nil {
 		return 0, err
@@ -35,9 +36,9 @@ func (repo *MySQLOrderRepository) CreateOrder(order domain.Order) (int, error) {
 func (repo *MySQLOrderRepository) GetOrderByID(id int) (*domain.Order, error) {
 	var order domain.Order
 	err := repo.DB.QueryRow(
-		"SELECT id, user_id, products, total_price, status FROM orders WHERE id = ?",
+		"SELECT id, user_id, product_id, total_price, status FROM orders WHERE id = ?",
 		id,
-	).Scan(&order.ID, &order.UserID, &order.Products, &order.TotalPrice, &order.Status)
+	).Scan(&order.ID, &order.UserID, &order.Product_id, &order.TotalPrice, &order.Status)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -50,7 +51,7 @@ func (repo *MySQLOrderRepository) GetOrderByID(id int) (*domain.Order, error) {
 }
 
 func (repo *MySQLOrderRepository) GetAllOrders() ([]domain.Order, error) {
-	rows, err := repo.DB.Query("SELECT id, user_id, products, total_price, status FROM orders")
+	rows, err := repo.DB.Query("SELECT id, user_id, product_id, total_price, status FROM orders")
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func (repo *MySQLOrderRepository) GetAllOrders() ([]domain.Order, error) {
 	orders := []domain.Order{}
 	for rows.Next() {
 		var o domain.Order
-		if err := rows.Scan(&o.ID, &o.UserID, &o.Products, &o.TotalPrice, &o.Status); err != nil {
+		if err := rows.Scan(&o.ID, &o.UserID, &o.Product_id, &o.TotalPrice, &o.Status); err != nil {
 			return nil, err
 		}
 		orders = append(orders, o)
@@ -74,8 +75,8 @@ func (repo *MySQLOrderRepository) GetAllOrders() ([]domain.Order, error) {
 
 func (repo *MySQLOrderRepository) UpdateOrder(order domain.Order) error {
 	_, err := repo.DB.Exec(
-		"UPDATE orders SET user_id=?, products=?, total_price=?, status=? WHERE id=?",
-		order.UserID, order.Products, order.TotalPrice, order.Status, order.ID,
+		"UPDATE orders SET user_id=?, product_id=?, total_price=?, status=? WHERE id=?",
+		order.UserID, order.Product_id, order.TotalPrice, order.Status, order.ID,
 	)
 	return err
 }
