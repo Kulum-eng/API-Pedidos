@@ -60,7 +60,9 @@ func main() {
 
 	orderRepository := o_adapters.NewMySQLOrderRepository(db)
 
-	createOrderUseCase := o_application.NewCreateOrderUseCase(orderRepository, rabbitBroker)
+	httpSenderNotification := o_adapters.NewHTTPSenderNotification("localhost", 3000)
+
+	createOrderUseCase := o_application.NewCreateOrderUseCase(orderRepository, rabbitBroker, httpSenderNotification)
 	getOrderUseCase := o_application.NewGetOrderUseCase(orderRepository)
 	updateOrderUseCase := o_application.NewUpdateOrderUseCase(orderRepository)
 	deleteOrderUseCase := o_application.NewDeleteOrderUseCase(orderRepository)

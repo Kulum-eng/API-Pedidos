@@ -15,11 +15,14 @@ type CreateOrderUseCase struct {
 }
 
 func NewCreateOrderUseCase(repo ports.OrderRepository, broker ports.Broker, senderNotification ports.SenderNotification) *CreateOrderUseCase {
-	return &CreateOrderUseCase{repo: repo, broker: broker, senderNotification: senderNotification}
+	return &CreateOrderUseCase{
+		repo:               repo,
+		broker:             broker,
+		senderNotification: senderNotification,
+	}
 }
 
 func (uc *CreateOrderUseCase) Execute(order domain.Order) (int, error) {
-	
 	idOrder, err := uc.repo.CreateOrder(order)
 	if err != nil {
 		return 0, err
