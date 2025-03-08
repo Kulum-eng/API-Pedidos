@@ -32,10 +32,10 @@ func (uc *CreateOrderUseCase) Execute(order domain.Order) (int, error) {
 	idOrderStr := strconv.Itoa(idOrder)
 
 	messageJson := map[string]interface{}{
-		"order_id":       idOrder,
-		"amount":         order.TotalPrice,
-		"status":         order.Status,
-		"payment_method": "tarjeta",
+		"order_id": idOrder,
+		"amount": order.TotalPrice,
+		"status": order.Status,
+		"payment_method":"tarjeta",
 	}
 
 	messageJsonStr, err := json.Marshal(messageJson)

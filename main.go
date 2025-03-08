@@ -52,7 +52,7 @@ func main() {
 		return
 	}
 
-	err = rabbitBroker.InitChannel("cola1")
+	err = rabbitBroker.InitChannel("Pedido")
 	if err != nil {
 		log.Println("Error al inicializar el canal de RabbitMQ:", err)
 		return
@@ -71,8 +71,7 @@ func main() {
 
 	o_routes.SetupOrderRoutes(myGin, createOrderController)
 
-	log.Println("Servidor iniciado en :8080")
-	if err := myGin.Run(":8080"); err != nil {
+	if err := myGin.Run(":8083"); err != nil {
 		log.Fatalf("Error al iniciar el servidor: %v", err)
 	}
 }
