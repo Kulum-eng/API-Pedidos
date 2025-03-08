@@ -1,6 +1,7 @@
 package aplication
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"ModaVane/orders/domain"
@@ -23,14 +24,26 @@ func NewCreateOrderUseCase(repo ports.OrderRepository, broker ports.Broker, send
 }
 
 func (uc *CreateOrderUseCase) Execute(order domain.Order) (int, error) {
+
 	idOrder, err := uc.repo.CreateOrder(order)
 	if err != nil {
 		return 0, err
 	}
-
 	idOrderStr := strconv.Itoa(idOrder)
 
-	err = uc.broker.Publish(idOrderStr)
+	messageJson := map[string]interface{}{
+		"order_id":       idOrder,
+		"amount":         order.TotalPrice,
+		"status":         order.Status,
+		"payment_method": "tarjeta",
+	}
+
+	messageJsonStr, err := json.Marshal(messageJson)
+	if err != nil {
+		return idOrder, err
+	}
+
+	err = uc.broker.Publish(string(messageJsonStr))
 	if err != nil {
 		return idOrder, err
 	}
