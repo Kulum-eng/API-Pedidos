@@ -38,40 +38,33 @@ func main() {
 
 	myGin.Use(CORS())
 
-	// Inicializar base de datos
 	db, err := core.InitDB()
 	if err != nil {
 		log.Println("Error al conectar a la base de datos:", err)
 		return
 	}
 
-	// Inicializar el broker RabbitMQ
 	rabbitBroker := o_adapters.NewRabbitMQBroker("ec2-3-83-91-51.compute-1.amazonaws.com", 5672, "ale", "ale123")
 
-	// Conectar al broker
 	err = rabbitBroker.Connect()
 	if err != nil {
 		log.Println("Error al conectar a RabbitMQ:", err)
 		return
 	}
 
-	// Inicializar el canal de RabbitMQ
 	err = rabbitBroker.InitChannel("cola1")
 	if err != nil {
 		log.Println("Error al inicializar el canal de RabbitMQ:", err)
 		return
 	}
 
-	// Inicializar el repositorio
 	orderRepository := o_adapters.NewMySQLOrderRepository(db)
 
-	// Inyección de dependencias en los casos de uso
 	createOrderUseCase := o_application.NewCreateOrderUseCase(orderRepository, rabbitBroker)
 	getOrderUseCase := o_application.NewGetOrderUseCase(orderRepository)
 	updateOrderUseCase := o_application.NewUpdateOrderUseCase(orderRepository)
 	deleteOrderUseCase := o_application.NewDeleteOrderUseCase(orderRepository)
 
-	// Crear controlador con los casos de uso inyectados
 	createOrderController := o_controllers.NewOrderController(createOrderUseCase, getOrderUseCase, updateOrderUseCase, deleteOrderUseCase)
 
 	o_routes.SetupOrderRoutes(myGin, createOrderController)
